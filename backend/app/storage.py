@@ -58,6 +58,14 @@ class Storage:
     def get_prompts_by_collection(self, collection_id: str) -> List[Prompt]:
         return [p for p in self._prompts.values() if p.collection_id == collection_id]
     
+    def update_prompts_collection_to_none(self, collection_id: str):
+        """
+        Update all prompts in the specified collection to have their collection_id set to None.
+        """
+        for prompt in self._prompts.values():
+            if prompt.collection_id == collection_id:
+                prompt.collection_id = None
+
     # ============== Utility ==============
     
     def clear(self):
@@ -67,3 +75,4 @@ class Storage:
 
 # Global storage instance
 storage = Storage()
+
