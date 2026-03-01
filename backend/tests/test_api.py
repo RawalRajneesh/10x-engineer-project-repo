@@ -128,6 +128,73 @@ class TestPrompts:
         # Newest (Second) should be first
         assert prompts[0]["title"] == "Second"  # Will fail until Bug #3 fixed
 
+    def test_patch_prompt_success(self, client: TestClient, sample_prompt_data):
+        # Create a prompt first
+        create_response = client.post("/prompts", json=sample_prompt_data)
+        prompt_id = create_response.json()["id"]
+
+        # Full update data as the schema does not support partial updates
+        updated_data = {
+          "title": "Partial Update Title",
+          "content": sample_prompt_data["content"],  # repeated from original data if not updating
+          "description": sample_prompt_data["description"],  # repeat or change as needed
+          "collection_id": sample_prompt_data.get("collection_id", None)  # include if originally set
+        }
+        response = client.patch(f"/prompts/{prompt_id}", json=updated_data)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["title"] == "Partial Update Title"
+   
+
+    # def test_patch_prompt_not_found(self, client: TestClient):
+    #     """Test that updating a non-existent prompt returns 404."""
+    #     response = client.patch("/prompts/nonexistent-id", json={"title": "New Title"})
+    #     assert response.status_code == 404
+    #     assert response.json()["detail"] == "Prompt not found"
+
+    def test_patch_prompt_collection_not_found(self, client: TestClient,       sample_prompt_data):
+        # Create a prompt first
+        create_response = client.post("/prompts", json=sample_prompt_data)
+        prompt_id = create_response.json()["id"]
+
+        # Full update data with a non-existent collection_id
+        updated_data = {
+          "title": sample_prompt_data["title"],  # Use the original or a new title
+          "content": sample_prompt_data["content"],  # Use the original or new content
+          "description": sample_prompt_data.get("description", ""),  # Use original or set default if missing
+          "collection_id": "nonexistent-collection"  # Non-existent ID to simulate the error case
+        }
+
+        response = client.patch(f"/prompts/{prompt_id}", json=updated_data)
+
+        assert response.status_code == 400
+        assert response.json()["detail"] == "Collection not found"
+
+    def test_patch_prompt_no_changes(self, client: TestClient, sample_prompt_data):
+        # Create a prompt first
+        create_response = client.post("/prompts", json=sample_prompt_data)
+        prompt_id = create_response.json()["id"]
+
+        original_data = create_response.json() 
+        # Provide a complete data object, even if values remain unchanged
+        empty_update_data = {
+          "title": original_data["title"],
+          "content": original_data["content"],
+          "description": original_data.get("description", ""),
+          "collection_id": original_data.get("collection_id", None)
+        }
+
+        response = client.patch(f"/prompts/{prompt_id}", json=empty_update_data)
+        
+        assert response.status_code == 200
+        data = response.json()
+        # Ensure the response still contains the original data
+        # Ensure data remains unchanged
+        assert data["title"] == original_data["title"]
+        assert data["content"] == original_data["content"]
+        assert data["description"] == original_data.get("description", "")
+
 
 class TestCollections:
     """Tests for collection endpoints."""
@@ -167,3 +234,4 @@ class TestCollections:
         prompts = client.get("/prompts").json()["prompts"]
         if prompts:
             assert prompts[0]["collection_id"] is None  # Expect None if update works correctly
+

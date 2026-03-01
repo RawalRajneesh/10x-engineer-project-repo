@@ -182,6 +182,7 @@ def patch_prompt(prompt_id: str, prompt_data: PromptUpdate):
         raise HTTPException(status_code=404, detail="Prompt not found")
 
     updated_prompt_data = existing
+    # Only update fields if provided
     if prompt_data.title is not None:
         updated_prompt_data.title = prompt_data.title
     if prompt_data.content is not None:
@@ -189,7 +190,8 @@ def patch_prompt(prompt_id: str, prompt_data: PromptUpdate):
     if prompt_data.description is not None:
         updated_prompt_data.description = prompt_data.description
 
-    if prompt_data.collection_id:
+    # Fix: Check if collection_id is not None before validating it
+    if prompt_data.collection_id is not None:
         collection = storage.get_collection(prompt_data.collection_id)
         if not collection:
             raise HTTPException(status_code=400, detail="Collection not found")
