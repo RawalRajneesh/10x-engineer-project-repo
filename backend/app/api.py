@@ -8,8 +8,10 @@ from app.models import (
     Prompt, PromptCreate, PromptUpdate,
     Collection, CollectionCreate,
     PromptList, CollectionList, HealthResponse,
+     Tag, TagCreate, TagList,
     get_current_time
 )
+
 from app.storage import storage
 from app.utils import sort_prompts_by_date, filter_prompts_by_collection, search_prompts
 from app import __version__
@@ -288,3 +290,83 @@ def delete_collection(collection_id: str):
     
     storage.update_prompts_collection_to_none(collection_id)
     return None
+
+
+
+
+# ============== Tag Endpoints ==============
+
+@app.post("/tags", response_model=Tag, status_code=201)
+def create_tag(tag_data: TagCreate):
+    """
+    Create a new tag.
+
+    Args:
+        tag_data (TagCreate): The data for the new tag.
+
+    Returns:
+        Tag: The newly created tag.
+    """
+    tag = Tag(**tag_data.model_dump())
+    return storage.create_tag(tag)
+
+
+@app.get("/tags", response_model=TagList)
+def list_tags():
+    """
+    Retrieve a list of all tags.
+
+    Returns:
+        TagList: A list of all tags.
+    """
+    tags = storage.get_all_tags()
+    return TagList(tags=tags, total=len(tags))
+
+
+@app.post("/prompts/{prompt_id}/tags", response_model=Prompt, status_code=200)
+def add_tag_to_prompt(prompt_id: str, tag_id: str):
+    """
+    Add a tag to a specific prompt.
+
+    Args:
+        prompt_id (str): The ID of the prompt to update.
+        tag_id (str): The ID of the tag to add.
+
+    Returns:
+        Prompt: The updated prompt with the new tag.
+    """
+    prompt = storage.get_prompt(prompt_id)
+    if not prompt:
+        raise HTTPException(status_code=404, detail="Prompt not found")
+
+    tag = storage.get_tag(tag_id)
+    if not tag:
+        raise HTTPException(status_code=404, detail="Tag not found")
+
+    prompt = storage.add_tag_to_prompt(prompt_id, tag_id)
+    return prompt
+
+
+@app.delete("/prompts/{prompt_id}/tags/{tag_id}", status_code=204)
+def remove_tag_from_prompt(prompt_id: str, tag_id: str):
+    """
+    Remove a specific tag from a prompt.
+
+    Args:
+        prompt_id (str): The ID of the prompt.
+        tag_id (str): The ID of the tag to remove.
+
+    Raises:
+        HTTPException: If the prompt or tag is not found.
+    """
+    prompt = storage.get_prompt(prompt_id)
+    if not prompt:
+        raise HTTPException(status_code=404, detail="Prompt not found")
+
+    if not storage.get_tag(tag_id):
+        raise HTTPException(status_code=404, detail="Tag not found")
+
+    storage.remove_tag_from_prompt(prompt_id, tag_id)
+    return None
+
+

@@ -89,6 +89,44 @@ class Collection(CollectionBase):
         from_attributes = True
 
 
+# ============== Tag Models ==============
+
+class TagBase(BaseModel):
+    """Base model for Tags.
+    Attributes:
+        name (str): The name of the tag.
+    """
+    name: str = Field(..., min_length=1, max_length=100)
+
+
+class TagCreate(TagBase):
+    """Model for creating a new tag based on TagBase."""
+    pass
+
+
+class Tag(TagBase):
+    """Model that represents a complete Tag with additional metadata.
+    Attributes:
+        id (str): Unique identifier for the tag, auto-generated.
+        prompts (List[str]): A list of prompt IDs associated with this tag.
+    """
+    id: str = Field(default_factory=generate_id)
+    prompts: List[str] = []
+
+    class Config:
+        from_attributes = True
+
+
+class TagList(BaseModel):
+    """Response model for a list of Tags.
+    Attributes:
+        tags (List[Tag]): A list of Tag objects.
+        total (int): Total number of tags available.
+    """
+    tags: List[Tag]
+    total: int
+
+
 # ============== Response Models ==============
 
 class PromptList(BaseModel):
@@ -122,6 +160,4 @@ class HealthResponse(BaseModel):
     """
     status: str
     version: str
-
-
 
