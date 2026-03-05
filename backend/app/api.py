@@ -32,6 +32,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/", response_model=dict)
+def read_root():
+   
+    return {"message": " to PromptLab API"}
+
 
 # ============== Health Check ==============
 
